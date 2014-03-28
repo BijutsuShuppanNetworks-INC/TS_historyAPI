@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>historyAPI</title>
+  <style>
+  *{margin: 0;padding: 0;}
+
+  #tab{
+    width: 60%;
+    margin: 50px auto;
+  }
+  @media screen and (max-width: 480px) {
+    #tab{
+      width: 90%;
+    }
+  }
+
+  /* メニュー
+     ========================================================================== */
+  .tab_menu{
+    display: table;
+    width: 100%;
+    border: 2px solid #E92934;
+    -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
+    -webkit-border-radius: 5px 5px 0 0;
+            border-radius: 5px 5px 0 0;
+  }
+  .tab_menu__list{
+    display: table-cell;
+    color: #E92934;
+    list-style: none;
+    line-height: 3em;
+    text-align: center;
+  }
+  .tab_menu__list + .tab_menu__list{
+    border-left: 2px solid #E92934;
+  }
+  .is-here{
+    background: #e82931;
+    color: #fff;
+  }
+
+
+
+  /* コンテンツ
+     ========================================================================== */
+  .tab_contents{
+    display: none;
+    border: 2px solid #E92934;
+    border-top: none;
+    -webkit-border-radius: 0 0 5px 5px;
+            border-radius: 0 0 5px 5px;
+    line-height: 200px;
+    text-align: center;
+  }
+
+  </style>
+</head>
+<body>
+<div id="tab">
+  <ul id="tab_menu" class="tab_menu">
+    <li class="tab_menu__list is-here" data-target="co1" id="tab1">tab1</li>
+    <li class="tab_menu__list" data-target="co2" id="tab2">tab2</li>
+    <li class="tab_menu__list" data-target="co3" id="tab3">tab3</li>
+  </ul>
+
+  <section id="co1" class="tab_contents" style="display:block">
+    contents 1
+  </section>
+  <section id="co2" class="tab_contents">
+    contents 2
+  </section>
+  <section id="co3" class="tab_contents">
+    contents 3
+  </section>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+<script>
+/* ==========================================================================
+   処理の流れ
+   1.tabをクリック
+   2.クリックされたタブのidをhistoryAPIに記録
+   3.ブラウザバックなどで履歴が操作された場合、2を押下したときの処理がされる
+   ========================================================================== */
+$(function(){
+  history.replaceState('tab1'); //初期のstateをセット
+  $menu = $('#tab_menu li');
+  // tabのクリック
+  // ==========================================================================
+  $menu.click(function() {
+    var tab = $(this).attr('id');
+    openTab(tab);
+
+    // historyにpush
+    history.pushState(tab, null); //第1引数はstate,第2引数はtitle(1.2とも省略不可)第3引数はurl
+  });
+
+
+
+  /* tabのコンテンツきりかえ
+     ========================================================================== */
+  var openTab = function(tab){
+    var $tab = $('#'+tab);
+    var target = $tab.attr('data-target');
+    $menu.removeClass('is-here');
+    $tab.addClass('is-here');
+    $('.tab_contents').css('display','none');
+    $('#'+target).css('display','block');
+  };
+
+
+
+  /* 履歴操作
+     ========================================================================== */
+  $(window).on('popstate', function(e){
+    var state = e.originalEvent.state;
+    console.log(state);
+    if(state){
+      openTab(state);
+    }
+  });
+
+});
+</script>
+
+</div>
+</body>
+</html>
