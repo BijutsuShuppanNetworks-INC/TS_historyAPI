@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+  <title>historyAPI</title>
+  <style>
+  *{margin: 0;padding: 0;}
+  #wrapper{
+    width: 320px;
+  }
+
+
+  /* header
+     ========================================================================== */
+  #header{
+    position: fixed;
+    top: 0;
+    width: 320px;
+    background: #000;
+    color: #FFF;
+    line-height: 50px;
+    text-align: center;
+  }
+  /* リスト
+     ========================================================================== */
+  .user_list{
+    width: 100%;
+    margin-top: 60px;
+  }
+
+  .user_item{
+    display: inline-block;
+    width: 50%;
+    height: 193px;
+    margin-top: -2px;
+    padding: 10px;
+    border: 2px solid #ddd;
+    -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
+    letter-spacing: -.4em;
+    vertical-align: top;
+  }
+
+  .user_item:nth-of-type(2n+1){ border-right: 1px solid #ddd;}
+  .user_item:nth-of-type(2n){ border-left: 1px solid #ddd;}
+
+  .user_item a{
+    display: block;
+    padding: 10px;
+    -webkit-border-radius: 5px;
+            border-radius: 5px;
+    background: #f2f2f2;
+    color: #838383;
+    text-decoration: none;
+    text-align: center;
+    letter-spacing: normal;
+  }
+
+  .user_item a img{
+    width: 100%;
+  }
+
+  /* loading
+     ========================================================================== */
+  .loading{
+    display: none;
+    position: fixed;
+    bottom: 0;
+    width: 320px;
+    height: 100px;
+    padding-top: 20px;
+    background: rgba(0, 0, 0, .2);
+    color: #FFF;
+    text-shadow: 1px 1px 5px #000;
+    text-align: center;
+  }
+
+  .loading:after{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    margin: -12px auto auto -12px;
+    background-color: rgba(0,0,0,0);
+    border: 3px solid rgba(0,0,0,.12);
+    border-top: 3px solid rgba(0,0,0,0);
+    border-left: 3px solid rgba(0,0,0,0);
+    border-radius: 24px;
+    box-shadow: 0 0 10px #ccc;
+    opacity: .9;
+    -moz-animation: spin .6s infinite linear;
+    -webkit-animation: spin .6s infinite linear;
+    animation: spin .6s infinite linear;
+    content: "";
+  }
+
+  @-moz-keyframes spin {
+    0% { -moz-transform: rotate(0deg);}
+    100% { -moz-transform: rotate(360deg);}
+  }
+  @-webkit-keyframes spin {
+    0% { -webkit-transform: rotate(0deg);}
+    100% { -webkit-transform: rotate(360deg);}
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+  }
+  </style>
+</head>
+<body>
+<!-- #wrapper -->
+<div id="wrapper">
+  <div id="header">header</div>
+  <div id="list" class="user_list">
+  </div>
+  <div id="sample_result"></div>
+  <div class="loading">読み込み中です</div>
+</div>
+<!-- //#wrapper -->
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+<script>
+$(function(){
+  var pageLoadLimit = 6,
+      h = window.history,
+      ajaxFlag = 'true';
+
+  console.log('history= '+h.state); // history状況確認
+
+
+
+
+
+  /*  リンク押下時
+     ========================================================================== */
+  $(document).on('click','.user_item a',function(){
+    event.preventDefault();
+    var href = $(this).attr('href'),
+        itemId = parseInt($(this).parent('div').attr('id')),
+        windowScroll = $(window).scrollTop();
+    history.replaceState('{"itemId":"'+ itemId +'","pageLoadLimit":'+ pageLoadLimit +',"windowScroll":"'+ windowScroll +'"}');
+    location.href = href;
+  });
+
+
+
+  /* scrollでページ読み込み
+     ========================================================================== */
+  var timer = false;
+  $(window).on('scroll', function() {
+    if (timer !== false) {
+      clearTimeout(timer);
+    }
+    timer = setTimeout(function() {
+      var itemNumber = $('.user_item').length;
+      if(itemNumber === 0){
+        clearTimeout(timer);
+      } else {
+        var docHeight = $(document).height(),
+            scrollPosition = $(window).height() + $(window).scrollTop();
+        console.log('発火条件 '+(docHeight - scrollPosition) / docHeight);
+        if( (docHeight - scrollPosition) / docHeight < 0.097 ){
+          nextLoad();
+        }
+      }
+      clearTimeout(timer);
+    }, 300);
+  });
+
+  function nextLoad(){
+    $('.loading').css('display', 'block');
+    var loadPage = Math.floor($('.user_item:last').attr('id') / pageLoadLimit) + 1;
+    setTimeout(function(){
+      loadList(pageLoadLimit, loadPage);
+    },100); // 体感的にちょっと遅らせてみる
+  }
+
+
+
+  /* 初回アクセス時・bfcache無効でブラウザバックしてきたとき
+     ========================================================================== */
+  $(window).on('popstate', function(e){
+    var state = e.originalEvent.state;
+    console.log('state= '+state);
+    var itemNumber = $('.user_item').length;
+    if(state !== null ){
+      if(itemNumber === 0){
+        // $('body,html').animate({scrollTop : 0}, 0);
+        var json = $.parseJSON(state);
+        // console.log('pageLoadLimit_'+ json.pageLoadLimit);
+        // console.log('state_'+ json.itemId);
+
+        var n = Math.ceil(json.itemId / json.pageLoadLimit),
+            pageLoadLimit2 = json.pageLoadLimit * n;
+        loadList(pageLoadLimit2, 1);
+
+        // リンク先が準備できたか確認
+        var timerId = false;
+        var scrollToElemnt = function(){
+          if(timerId !== false ){
+            clearTimeout(timerId);
+          }
+          timerId = setTimeout(function(){
+            if($('#' + json.itemId).get(0)){
+              console.log('クリックした要素の位置にスライド');
+              $('body,html').animate({scrollTop : json.windowScroll}, 20);
+            }
+          }, 400);
+        };
+        scrollToElemnt();
+      }
+    } else {
+      if(itemNumber === 0){
+        console.log('初回アクセスのとき');
+        loadList(pageLoadLimit, 1);
+      }
+    }
+  });
+
+  // キャッシュを保持したまま戻ってきたとき
+  window.onpageshow = function(evt) {
+    if(evt.persisted){
+      // Back-Forwad Cacheが有効なときもイベントを発生させる
+      // alert("pageshow:キャッシュ");
+    }
+  };
+
+
+
+  /* ajax
+     ========================================================================== */
+  function loadList(limit,pageNo){
+    console.log('ajax通信のurlパラメータ?limit=' + limit + '&page=' + pageNo);
+    if( ajaxFlag === 'true'){
+      $.ajax({
+        type: 'GET',
+        url: 'http://sys.bnw-dev.info/ohnami/cakePHP2Project/app/webroot/index.php/1/users.json',
+        data:{
+          limit: limit,
+          page: pageNo
+        },
+        dataType: 'json',
+        timeout: 5000,
+        beforeSend: function(){
+          ajaxFlag = 'false';
+        }
+      })
+      .done(function(data) {
+        // 成功時
+        jsonParser(data);
+        $('.loading').css('display','none');
+      })
+      .fail(function(XMLHttpRequest, textStatus, errorThrown) {
+        // 失敗時
+
+        if(textStatus == 'timeout'){ // タイムアウト処理
+          var c = 0;
+          if(c < 5){
+            loadList();
+            c++;
+          } else {
+            alert('電波の良いところで再度お試しください');
+          }
+        }
+
+        $('#sample_result').html( // error状況を表示
+          "XMLHttpRequest : " + XMLHttpRequest.status + '<br>' +
+          "textStatus : " + textStatus + '<br>' +
+          "errorThrown : " + errorThrown.message
+        );
+      })
+      .always(function(){
+        // 通信完了時
+        ajaxFlag = 'true';
+      });
+    }
+  }
+
+
+
+  /* 通信成功時　jsonのparser
+     ========================================================================== */
+    function jsonParser(data) {
+      var userList = [],
+          userListContents = '';
+      var count = 0;
+      $(data.users).each(function(){
+        userListContents = '<div class="user_item" id="'+data.users[count].User.id+'"><a href="history.html"><img src="'+data.users[count].User.url+'" width="116" height="116"><p>'+data.users[count].User.id+'</p></a></div>';
+        userList.push(userListContents);
+        count++;
+
+      });
+      $('#list').append(userList);
+    }
+});
+
+</script>
+</body>
+</html>
