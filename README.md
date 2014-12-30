@@ -2,9 +2,9 @@ TS_historyAPI
 =============
 # ajax先にクローラーが来るかどうか検証
 
-http://gc.bnw-me.info/text1/  
-http://gc.bnw-me.info/text2/  
-http://gc.bnw-me.info/text3/
+http://gc.bnw-me.info/test1/  
+http://gc.bnw-me.info/test2/  
+http://gc.bnw-me.info/test3/
 
 
 ## 概要
