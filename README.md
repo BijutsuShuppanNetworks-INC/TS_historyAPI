@@ -1,5 +1,12 @@
 TS_historyAPI
 =============
+# ajax先にクローラーが来るかどうか検証
+
+http://gc.bnw-me.info/text1/  
+http://gc.bnw-me.info/text2/  
+http://gc.bnw-me.info/text3/
+
+
 ## 概要
 historyAPIでのブラウザバックの挙動調査
 
